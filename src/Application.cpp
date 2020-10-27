@@ -187,6 +187,15 @@ int main(void)
     unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
     GLCall(glUseProgram(shader));
 
+
+    //Retrieve location of uniform in shader
+    GLCall(int location = glGetUniformLocation(shader, "u_Color"));
+    //Makes sure uniform is there
+    ASSERT(location != -1);
+
+    //Have to have a bound shader to use uniforms
+    GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
