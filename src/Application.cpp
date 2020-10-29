@@ -6,23 +6,10 @@
 #include <string>
 #include <sstream>
 
-#define ASSERT(x) if (!(x)) __debugbreak();
-#define GLCall(x) GLClearError();\
-    x;\
-    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+#include "Renderer.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
-
-static void GLClearError() {
-    while (glGetError() != GL_NO_ERROR);
-}
-
-static bool GLLogCall(const char* function, const char* file, int line) {
-    while (GLenum error = glGetError()) {
-        std::cout << "[OpenGL Error] (" << error << "): " << function << " in " << file << " on line: "<< line <<std::endl;
-        return false;
-    }
-    return true;
-}
 
 struct ShaderProgramSource {
     std::string VertexSource;
@@ -155,98 +142,92 @@ int main(void)
 
     std::cout << glGetString(GL_VERSION) << std::endl;
 
-
-    float positions[] = { 
-       -0.5f, -0.5f,
-        0.5f, -0.5f,
-        0.5f,  0.5f,
-       -0.5f,  0.5f
-    };
-
-    unsigned int indicies[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
-
-    unsigned int vao;
-    GLCall(glGenVertexArrays(1, &vao));
-    GLCall(glBindVertexArray(vao));
-
-
-    unsigned int buffer;
-    GLCall(glGenBuffers(1, &buffer));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-    GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW));
-
-
-    GLCall(glEnableVertexAttribArray(0));
-    GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));
-
-
-    unsigned int ibo;
-    GLCall(glGenBuffers(1, &ibo));
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indicies, GL_STATIC_DRAW));
-
-
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-
-
-    ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
-
-    unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
-    GLCall(glUseProgram(shader));
-
-
-    //Retrieve location of uniform in shader
-    GLCall(int location = glGetUniformLocation(shader, "u_Color"));
-    //Makes sure uniform is there
-    ASSERT(location != -1);
-
-    //Have to have a bound shader to use uniforms
-    GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
-
-    //Unbinds all elements
-    GLCall(glBindVertexArray(0));
-    GLCall(glUseProgram(0));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
-
-
-
-    float r = 0.0f;
-    float increment = .02f;
-
-    /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
+    //Scopes the draw call so there is no infinite loop from the index 
+    //buffer not being destroyed before glfw is terminated causing the 
+    //error checker to loop infinetly because it doesn't have a valid context
     {
-        /* Render here */
-        GLCall(glClear(GL_COLOR_BUFFER_BIT));
+        float positions[] = {
+           -0.5f, -0.5f,
+            0.5f, -0.5f,
+            0.5f,  0.5f,
+           -0.5f,  0.5f
+        };
 
-        GLCall(glUseProgram(shader));
-        GLCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));
+        unsigned int indicies[] = {
+            0, 1, 2,
+            2, 3, 0
+        };
 
+        unsigned int vao;
+        GLCall(glGenVertexArrays(1, &vao));
         GLCall(glBindVertexArray(vao));
-        GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
 
 
-        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+        VertexBuffer vb(positions, 4 * 2 * sizeof(float));
 
-        if (r + increment > 1 || r + increment < 0)
+        GLCall(glEnableVertexAttribArray(0));
+        GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));
+
+        IndexBuffer ib(indicies, 6);
+
+
+        ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
+
+        unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
+        GLCall(glUseProgram(shader));
+
+
+        //Retrieve location of uniform in shader
+        GLCall(int location = glGetUniformLocation(shader, "u_Color"));
+        //Makes sure uniform is there
+        ASSERT(location != -1);
+
+        //Have to have a bound shader to use uniforms
+        GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
+
+        //Unbinds all elements
+        GLCall(glBindVertexArray(0));
+        GLCall(glUseProgram(0));
+
+        vb.UnBind();
+        ib.UnBind();
+
+
+
+        float r = 0.0f;
+        float increment = .02f;
+
+        /* Loop until the user closes the window */
+        while (!glfwWindowShouldClose(window))
         {
-            increment *= -1;
+            /* Render here */
+            GLCall(glClear(GL_COLOR_BUFFER_BIT));
+
+            GLCall(glUseProgram(shader));
+            GLCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));
+
+            GLCall(glBindVertexArray(vao));
+            ib.Bind();
+
+
+            GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+            if (r + increment > 1 || r + increment < 0)
+            {
+                increment *= -1;
+            }
+            r += increment;
+
+            /* Swap front and back buffers */
+            GLCall(glfwSwapBuffers(window));
+
+            /* Poll for and process events */
+            GLCall(glfwPollEvents());
         }
-        r += increment;
 
-        /* Swap front and back buffers */
-        GLCall(glfwSwapBuffers(window));
-
-        /* Poll for and process events */
-        GLCall(glfwPollEvents());
+        //Shader clean up
+        GLCall(glDeleteProgram(shader));
     }
-
-    //Shader clean up
-    GLCall(glDeleteProgram(shader));
 
     glfwTerminate();
     return 0;
