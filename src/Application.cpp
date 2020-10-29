@@ -148,10 +148,10 @@ int main(void)
     //error checker to loop infinetly because it doesn't have a valid context
     {
         float positions[] = {
-           -0.5f, -0.5f,
-            0.5f, -0.5f,
-            0.5f,  0.5f,
-           -0.5f,  0.5f
+           -0.5f, -.75f,
+            0.5f, -.75f,
+            0.5f,  .75f,
+           -0.5f,  .75f
         };
 
         unsigned int indicies[] = {
