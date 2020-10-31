@@ -12,6 +12,7 @@
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "Texture.h"
 
 int main(void)
 {
@@ -47,10 +48,10 @@ int main(void)
     //error checker to loop infinetly because it doesn't have a valid context
     {
         float positions[] = {
-           -0.5f, -.75f,
-            0.5f, -.75f,
-            0.5f,  .75f,
-           -0.5f,  .75f
+           -0.5f, -.75f, 0.0f, 0.0f,
+            0.5f, -.75f, 1.0f, 0.0f,
+            0.5f,  .75f, 1.0f, 1.0f,
+           -0.5f,  .75f, 0.0f, 1.0f
         };
 
         unsigned int indicies[] = {
@@ -58,10 +59,14 @@ int main(void)
             2, 3, 0
         };
 
+        GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+        GLCall(glEnable(GL_BLEND));
+
         VertexArray va;
-        VertexBuffer vb(positions, 4 * 2 * sizeof(float));
+        VertexBuffer vb(positions, 4 * 4 * sizeof(float));
 
         VertexBufferLayout layout;
+        layout.Push<float>(2);
         layout.Push<float>(2);
         va.AddBuffer(vb, layout);
 
@@ -72,7 +77,9 @@ int main(void)
         Shader shader("res/shaders/Basic.shader");
         shader.Bind();
 
-        shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
+        Texture texture("res/textures/destroyer.png");
+        texture.Bind();
+        shader.SetUniform1i("u_Texture", 0);
 
         //Unbinds all elements
         va.UnBind();
@@ -90,7 +97,6 @@ int main(void)
             renderer.Clear();
 
             shader.Bind();
-            shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
 
             renderer.Draw(va, ib, shader);
 
