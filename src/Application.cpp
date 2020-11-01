@@ -13,6 +13,8 @@
 #include "VertexArray.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 int main(void)
 {
@@ -24,7 +26,7 @@ int main(void)
 
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(640, 480, "Learning OpenGL", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -48,10 +50,10 @@ int main(void)
     //error checker to loop infinetly because it doesn't have a valid context
     {
         float positions[] = {
-           -0.5f, -.75f, 0.0f, 0.0f,
-            0.5f, -.75f, 1.0f, 0.0f,
-            0.5f,  .75f, 1.0f, 1.0f,
-           -0.5f,  .75f, 0.0f, 1.0f
+           -0.5f, -.5f, 0.0f, 0.0f,
+            0.5f, -.5f, 1.0f, 0.0f,
+            0.5f,  .5f, 1.0f, 1.0f,
+           -0.5f,  .5f, 0.0f, 1.0f
         };
 
         unsigned int indicies[] = {
@@ -74,8 +76,11 @@ int main(void)
 
         Renderer renderer;
 
+        glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+
         Shader shader("res/shaders/Basic.shader");
         shader.Bind();
+        shader.SetUniformMat4f("u_MVP", proj);
 
         Texture texture("res/textures/destroyer.png");
         texture.Bind();
