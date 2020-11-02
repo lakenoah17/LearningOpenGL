@@ -50,10 +50,10 @@ int main(void)
     //error checker to loop infinetly because it doesn't have a valid context
     {
         float positions[] = {
-           -0.5f, -.5f, 0.0f, 0.0f,
-            0.5f, -.5f, 1.0f, 0.0f,
-            0.5f,  .5f, 1.0f, 1.0f,
-           -0.5f,  .5f, 0.0f, 1.0f
+            100.0f, 100.0f, 0.0f, 0.0f,
+            200.0f, 100.0f, 1.0f, 0.0f,
+            200.0f, 200.0f, 1.0f, 1.0f,
+            100.0f, 200.0f, 0.0f, 1.0f
         };
 
         unsigned int indicies[] = {
@@ -76,11 +76,15 @@ int main(void)
 
         Renderer renderer;
 
-        glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+        glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
+        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(200, 200, 0));
+
+        glm::mat4 mvp = proj * view * model;
 
         Shader shader("res/shaders/Basic.shader");
         shader.Bind();
-        shader.SetUniformMat4f("u_MVP", proj);
+        shader.SetUniformMat4f("u_MVP", mvp);
 
         Texture texture("res/textures/destroyer.png");
         texture.Bind();
