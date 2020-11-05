@@ -20,20 +20,12 @@ namespace test {
 			-50.0f, -50.0f, 0.0f, 0.0f,
 			 50.0f, -50.0f, 1.0f, 0.0f,
 			 50.0f,  50.0f, 1.0f, 1.0f,
-			-50.0f,  50.0f, 0.0f, 1.0f,
-
-			  0.0f,   0.0f, 0.0f, 0.0f,
-			100.0f,   0.0f, 1.0f, 0.0f,
-			100.0f, 100.0f, 1.0f, 1.0f,
-			  0.0f, 100.0f, 0.0f, 1.0f
+			-50.0f,  50.0f, 0.0f, 1.0f
 		};
 
 		unsigned int indicies[] = {
 			0, 1, 2,
-			2, 3, 0,
-
-			4, 5, 6,
-			6, 7, 4
+			2, 3, 0
 		};
 
 		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
@@ -42,14 +34,14 @@ namespace test {
 		m_Shader = std::make_unique<Shader>("res/shaders/Basic.shader");
 		m_VAO = std::make_unique<VertexArray>();
 
-		m_VertexBuffer = std::make_unique<VertexBuffer>(positions, 4 * 8 * sizeof(float));
+		m_VertexBuffer = std::make_unique<VertexBuffer>(positions, 4 * 4 * sizeof(float));
 
 		VertexBufferLayout layout;
 		layout.Push<float>(2);
 		layout.Push<float>(2);
 		m_VAO->AddBuffer(*m_VertexBuffer, layout);
 
-		m_IndexBuffer = std::make_unique<IndexBuffer>(indicies, 12);
+		m_IndexBuffer = std::make_unique<IndexBuffer>(indicies, 6);
 
 		m_Shader->Bind();
 
@@ -85,11 +77,23 @@ namespace test {
 
 			renderer.Draw(*m_VAO, *m_IndexBuffer, *m_Shader);
 		}
+
+
+		//What is entailed in a draw call
+		{
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), m_TranslationB);
+			glm::mat4 mvp = m_Proj * m_View * model;
+			m_Shader->Bind();
+			m_Shader->SetUniformMat4f("u_MVP", mvp);
+
+			renderer.Draw(*m_VAO, *m_IndexBuffer, *m_Shader);
+		}
 	}
 
 	void TestTexture2D::OnImGuiRender()
 	{
 		ImGui::SliderFloat3("Translation A", &m_TranslationA.x, 0.0f, 960.0f);
+		ImGui::SliderFloat3("Translation B", &m_TranslationB.x, 0.0f, 960.0f);
 		ImGui::Text("Application avg %.3f", 1000.0f / ImGui::GetIO().Framerate);
 	}
 }
